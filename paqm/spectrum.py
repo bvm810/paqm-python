@@ -28,11 +28,11 @@ class SpectrumAnalyzer:
         raise NotImplementedError
 
     def stft(self, signal: torch.Tensor) -> torch.Tensor:
-        # output stft with size (n_channels, nfft // 2 + 1, n_frames)
+        # output stft with size (batch, n_channels, nfft // 2 + 1, n_frames)
         hop = self.frame_size - self.overlap_size
         frames = frame_signal(signal, self.window, hop)
-        stft = torch.fft.rfft(input=frames, n=self.nfft)
-        return torch.movedim(stft, 2, 1)
+        stft = torch.fft.rfft(input=frames, n=self.nfft, dim=-1)
+        return torch.movedim(stft, -2, -1)
 
     def power_spectrum(self, signal: torch.Tensor) -> torch.Tensor:
         spectrum = self.stft(signal)
@@ -55,7 +55,9 @@ class SpectrumAnalyzer:
         return filterbank
 
     def bark_spectrum(self, signal: torch.Tensor) -> torch.Tensor:
+        # output bark spectrum with shape (batch, channels, barks, frames)
         filterbank = self._get_bark_filterbank()
+        filterbank = filterbank.view(1, 1, filterbank.shape[0], -1)
         power_spectrum = self.power_spectrum(signal)
         return filterbank.to(power_spectrum.dtype) @ power_spectrum
 
