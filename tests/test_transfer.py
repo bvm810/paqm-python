@@ -73,3 +73,15 @@ def test_inner_to_outer_transfer():
     # there is also error for very high frequencies because of the interpolation difference
     # this should not be relevant as it only impacts frequencies above 24 Barks
     # assert torch.allclose(expected_output, output, atol=1e-06, rtol=1e-02)
+
+
+def test_batch():
+    bark_frequencies = torch.from_numpy(MATLAB_FIXTURES["bark_axis"]).squeeze()
+    bark_frequencies = bark_frequencies.to(dtype=torch.float32)
+    bark_stft = torch.from_numpy(MATLAB_FIXTURES["bark_spectrum"])
+    bark_stft = bark_stft.to(dtype=torch.float32)
+    bark_stft = bark_stft.view(1, 1, bark_stft.shape[0], -1)
+    channels = torch.cat((bark_stft, bark_stft), dim=1)
+    batch = torch.cat([channels] * 5, dim=0)
+    output = transfer.transfer_signal(batch, bark_frequencies)
+    assert output.shape == (5, 2, 128, 24)
