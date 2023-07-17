@@ -12,7 +12,7 @@ ENERGY_TIME_DECAY_CONSTANT = [
     (3272.8, 3 * 1e-3),
 ]
 
-FREQ_SPREADING_SLOPES = (31, 22)
+FREQ_SLOPES_CONSTANTS = (31, 22)
 
 
 class Masker:
@@ -21,13 +21,13 @@ class Masker:
         time_compression: float,
         freq_compression: float,
         tau_curve: List[Tuple[float, float]] = ENERGY_TIME_DECAY_CONSTANT,
-        freq_spreading_slopes: Tuple[float, float] = FREQ_SPREADING_SLOPES,
+        freq_spreading_constants: Tuple[float, float] = FREQ_SLOPES_CONSTANTS,
     ) -> None:
         self.time_compression = time_compression
         self.freq_compression = freq_compression
         self._tau_curve_frequencies = torch.Tensor([pair[0] for pair in tau_curve])
         self._tau_curve_values = torch.Tensor([pair[1] for pair in tau_curve])
-        self._freq_spreading_slopes = freq_spreading_slopes
+        self._freq_spreading_constants = freq_spreading_constants
 
     def _get_time_decay(
         self, frequencies: torch.Tensor, overlap: float
@@ -48,18 +48,51 @@ class Masker:
     ) -> torch.Tensor:
         time_decay = self._get_time_decay(bark_axis, overlap)
         spread_spectrum = torch.zeros_like(spectrum)
-        spread_spectrum[:, 0] = spectrum[:, 0]
+        alpha = self.time_compression
+        spread_spectrum[..., 0] = spectrum[..., 0]
         for i in range(1, spectrum.shape[-1]):
-            previous = (spread_spectrum[:, i - 1] * time_decay) ** self.time_compression
-            current = spectrum[:, i] ** self.time_compression
-            spread_spectrum[:, i] = (previous + current) ** (1 / self.time_compression)
+            previous = (spread_spectrum[..., i - 1] * time_decay) ** alpha
+            current = spectrum[..., i] ** alpha
+            spread_spectrum[..., i] = (previous + current) ** (1 / alpha)
         return spread_spectrum
 
-    def frequency_domain_spreading(
-        self, signal: torch.Tensor, bark_axis: torch.Tensor
+    def _ascending_slopes(self, spectrum: torch.Tensor) -> torch.Tensor:
+        ascending_slopes = self._freq_spreading_constants[0] * torch.ones_like(spectrum)
+        ascending_slopes = ascending_slopes.movedim(-1, -2).unsqueeze(-3)
+        return ascending_slopes
+
+    def _descending_slopes(
+        self, bark_axis: torch.Tensor, bark_spectrum: torch.Tensor
     ) -> torch.Tensor:
-        # TODO freq domain spreading
-        pass
+        hertz_frequencies = bark_to_hertz(bark_axis).unsqueeze(1)
+        base_slope = self._freq_spreading_constants[1]
+        descending_slopes = base_slope + 230 / hertz_frequencies - 0.2 * bark_spectrum
+        return descending_slopes.movedim(-1, -2).unsqueeze(-3)
+
+    def _get_freq_spreading_masks(
+        self, bark_axis: torch.Tensor, spectrum: torch.Tensor
+    ) -> torch.Tensor:
+        freqs = bark_axis.view(1, 1, -1)
+        center_freq = bark_axis.view(-1, 1, 1)
+        up_slopes = self._ascending_slopes(spectrum)
+        down_slopes = self._descending_slopes(bark_axis, spectrum)
+        spectrum = spectrum.unsqueeze(-1)
+        # ascending --> max(S1 * (f - fo + L/S1), 0) for f < fo
+        ascending_mask = up_slopes * (freqs - center_freq + spectrum / up_slopes)
+        ascending_mask = (freqs < center_freq) * torch.clip(ascending_mask, min=0)
+        # descending --> max(-S2 * (f - fo - L/S2), 0) for f >= fo
+        descending_mask = -down_slopes * (freqs - center_freq - spectrum / down_slopes)
+        descending_mask = (freqs >= center_freq) * torch.clip(descending_mask, min=0)
+        return ascending_mask + descending_mask
+
+    def frequency_domain_spreading(
+        self, power_spectrum: torch.Tensor, bark_axis: torch.Tensor
+    ) -> torch.Tensor:
+        db_spectrum = 10 * torch.log10(power_spectrum)
+        masks = self._get_freq_spreading_masks(bark_axis, db_spectrum)
+        masks = 10 ** (masks / 10)
+        excitation = torch.sum(masks**self.freq_compression, dim=-1)
+        return excitation ** (1 / self.freq_compression)
 
     @property
     def tau_curve_values(self) -> torch.Tensor:
@@ -72,11 +105,3 @@ class Masker:
     @property
     def tau_curve_frequencies_in_barks(self) -> torch.Tensor:
         return hertz_to_bark(self._tau_curve_frequencies)
-
-    @property
-    def ascending_slope(self) -> float:
-        return self._freq_spreading_slopes[0]
-
-    @property
-    def descending_slope(self) -> float:
-        return self._freq_spreading_slopes[1]
