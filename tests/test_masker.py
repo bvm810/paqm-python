@@ -49,8 +49,8 @@ def test_batch_time_spreading():
 def test_ascending_freq_spreading_slopes():
     spectrum = torch.ones((3, 4))
     output = masker._ascending_slopes(spectrum)
-    assert output.shape == (1, 4, 3)
-    expected_output = 31 * spectrum.movedim(-1, -2).unsqueeze(-3)
+    assert output.shape == (3, 4, 1)
+    expected_output = 31 * spectrum.unsqueeze(-1)
     assert torch.allclose(expected_output, output)
 
 
@@ -58,12 +58,12 @@ def test_descending_freq_spreading_slopes():
     spectrum = torch.ones(3, 4)
     axis = torch.Tensor([4, 5, 6])
     output = masker._descending_slopes(axis, spectrum)
-    assert output.shape == (1, 4, 3)
+    assert output.shape == (3, 4, 1)
     expected_frame = 22 + 230 / bark_to_hertz(axis) - 0.2
     expected_frame = expected_frame.unsqueeze(1)
     assert expected_frame.shape == (3, 1)
     expected_output = torch.cat([expected_frame] * 4, dim=1)
-    expected_output = expected_output.movedim(-1, -2).unsqueeze(-3)
+    expected_output = expected_output.unsqueeze(-1)
     assert torch.allclose(expected_output, output)
 
 
@@ -75,15 +75,18 @@ def test_freq_spreading_masks():
     db_input = 10 * torch.log10(input)
     output = masker._get_freq_spreading_masks(bark_frequencies, db_input)
 
-    fig, ax = plt.subplots(figsize=(6.5, 4))
-    ax.plot(
-        bark_frequencies,
-        output[39, 12, :],
-        marker="o",
-    )
-    plt.xlabel("Barks")
-    plt.ylabel("dB")
-    plt.title("12th Frame, 39th Bin Mask")
+    # visual check, could not think of automated way to test
+    fig, axs = plt.subplots(figsize=(12, 12), nrows=2, ncols=2)
+    for ax, bin in zip(axs.flatten(), [38, 39, 40, 41]):
+        print(type(ax))
+        ax.plot(
+            bark_frequencies,
+            output[bin, 12, :],
+            marker="o",
+        )
+        ax.set_xlabel("Barks")
+        ax.set_ylabel("dB")
+        ax.set_title(f"12th Frame, {bin}th Bin Mask")
     plt.show()
 
 

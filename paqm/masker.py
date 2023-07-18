@@ -58,8 +58,7 @@ class Masker:
 
     def _ascending_slopes(self, spectrum: torch.Tensor) -> torch.Tensor:
         ascending_slopes = self._freq_spreading_constants[0] * torch.ones_like(spectrum)
-        ascending_slopes = ascending_slopes.movedim(-1, -2).unsqueeze(-3)
-        return ascending_slopes
+        return ascending_slopes.unsqueeze(-1)
 
     def _descending_slopes(
         self, bark_axis: torch.Tensor, bark_spectrum: torch.Tensor
@@ -67,7 +66,7 @@ class Masker:
         hertz_frequencies = bark_to_hertz(bark_axis).unsqueeze(1)
         base_slope = self._freq_spreading_constants[1]
         descending_slopes = base_slope + 230 / hertz_frequencies - 0.2 * bark_spectrum
-        return descending_slopes.movedim(-1, -2).unsqueeze(-3)
+        return descending_slopes.unsqueeze(-1)
 
     def _get_freq_spreading_masks(
         self, bark_axis: torch.Tensor, spectrum: torch.Tensor
@@ -77,12 +76,16 @@ class Masker:
         up_slopes = self._ascending_slopes(spectrum)
         down_slopes = self._descending_slopes(bark_axis, spectrum)
         spectrum = spectrum.unsqueeze(-1)
+        # TODO 18/07/2023 --> should the expectation patterns have minimum contribution at zero?
         # ascending --> max(S1 * (f - fo + L/S1), 0) for f < fo
         ascending_mask = up_slopes * (freqs - center_freq + spectrum / up_slopes)
-        ascending_mask = (freqs < center_freq) * torch.clip(ascending_mask, min=0)
+        # ascending_mask = (freqs < center_freq) * torch.clip(ascending_mask, min=0)
+        ascending_mask = (freqs < center_freq) * ascending_mask
+        # TODO 18/07/2023 --> should the expectation patterns have minimum contribution at zero?
         # descending --> max(-S2 * (f - fo - L/S2), 0) for f >= fo
         descending_mask = -down_slopes * (freqs - center_freq - spectrum / down_slopes)
-        descending_mask = (freqs >= center_freq) * torch.clip(descending_mask, min=0)
+        # descending_mask = (freqs >= center_freq) * torch.clip(descending_mask, min=0)
+        descending_mask = (freqs >= center_freq) * descending_mask
         return ascending_mask + descending_mask
 
     def frequency_domain_spreading(
@@ -91,8 +94,9 @@ class Masker:
         db_spectrum = 10 * torch.log10(power_spectrum)
         masks = self._get_freq_spreading_masks(bark_axis, db_spectrum)
         masks = 10 ** (masks / 10)
-        excitation = torch.sum(masks**self.freq_compression, dim=-1)
-        return excitation ** (1 / self.freq_compression)
+        excitation = torch.sum(masks ** (self.freq_compression / 2), dim=-3)
+        excitation = excitation ** (2 / self.freq_compression)
+        return excitation.movedim(-1, -2)
 
     @property
     def tau_curve_values(self) -> torch.Tensor:
