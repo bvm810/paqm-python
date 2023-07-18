@@ -100,6 +100,7 @@ def test_freq_spreading():
     expected_output = torch.from_numpy(MATLAB_FIXTURES["excitation"])
     expected_output = expected_output.to(dtype=torch.float32)
 
+    # visual check
     fig, (ax1, ax2) = plt.subplots(figsize=(12, 4), ncols=2)
     obtained = ax1.imshow(output, aspect="auto", origin="lower")
     ax1.set_title("Frequency Spread Spectrum")
@@ -114,3 +115,15 @@ def test_freq_spreading():
     plt.show()
 
     assert torch.allclose(expected_output, output, atol=1e-06, rtol=1e-02)
+
+
+def test_batch_frequency_spreading():
+    bark_frequencies = torch.from_numpy(MATLAB_FIXTURES["bark_axis"])
+    bark_frequencies = bark_frequencies.to(dtype=torch.float32).squeeze()
+    input = torch.from_numpy(MATLAB_FIXTURES["time_spread_spectrum"])
+    input = input.to(dtype=torch.float32)
+    input = input.view(1, 1, input.shape[0], -1)
+    channels = torch.cat((input, input), dim=1)
+    batch = torch.cat([channels] * 5, dim=0)
+    output = masker.frequency_domain_spreading(batch, bark_frequencies)
+    assert output.shape == (5, 2, 128, 24)

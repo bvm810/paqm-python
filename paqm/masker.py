@@ -56,37 +56,38 @@ class Masker:
             spread_spectrum[..., i] = (previous + current) ** (1 / alpha)
         return spread_spectrum
 
-    def _ascending_slopes(self, spectrum: torch.Tensor) -> torch.Tensor:
-        ascending_slopes = self._freq_spreading_constants[0] * torch.ones_like(spectrum)
+    def _ascending_slopes(self, db_spectrum: torch.Tensor) -> torch.Tensor:
+        slope = self._freq_spreading_constants[0]
+        ascending_slopes = slope * torch.ones_like(db_spectrum)
         return ascending_slopes.unsqueeze(-1)
 
     def _descending_slopes(
-        self, bark_axis: torch.Tensor, bark_spectrum: torch.Tensor
+        self, bark_axis: torch.Tensor, db_spectrum: torch.Tensor
     ) -> torch.Tensor:
         hertz_frequencies = bark_to_hertz(bark_axis).unsqueeze(1)
         base_slope = self._freq_spreading_constants[1]
-        descending_slopes = base_slope + 230 / hertz_frequencies - 0.2 * bark_spectrum
+        descending_slopes = base_slope + 230 / hertz_frequencies - 0.2 * db_spectrum
         return descending_slopes.unsqueeze(-1)
 
     def _get_freq_spreading_masks(
-        self, bark_axis: torch.Tensor, spectrum: torch.Tensor
+        self, bark_axis: torch.Tensor, db_spectrum: torch.Tensor
     ) -> torch.Tensor:
         freqs = bark_axis.view(1, 1, -1)
         center_freq = bark_axis.view(-1, 1, 1)
-        up_slopes = self._ascending_slopes(spectrum)
-        down_slopes = self._descending_slopes(bark_axis, spectrum)
-        spectrum = spectrum.unsqueeze(-1)
+        up_slopes = self._ascending_slopes(db_spectrum)
+        down_slopes = self._descending_slopes(bark_axis, db_spectrum)
+        db_spectrum = db_spectrum.unsqueeze(-1)
         # TODO 18/07/2023 --> should the expectation patterns have minimum contribution at zero?
         # ascending --> max(S1 * (f - fo + L/S1), 0) for f < fo
-        ascending_mask = up_slopes * (freqs - center_freq + spectrum / up_slopes)
+        up_mask = up_slopes * (freqs - center_freq + db_spectrum / up_slopes)
         # ascending_mask = (freqs < center_freq) * torch.clip(ascending_mask, min=0)
-        ascending_mask = (freqs < center_freq) * ascending_mask
+        up_mask = (freqs < center_freq) * up_mask
         # TODO 18/07/2023 --> should the expectation patterns have minimum contribution at zero?
         # descending --> max(-S2 * (f - fo - L/S2), 0) for f >= fo
-        descending_mask = -down_slopes * (freqs - center_freq - spectrum / down_slopes)
+        down_mask = -down_slopes * (freqs - center_freq - db_spectrum / down_slopes)
         # descending_mask = (freqs >= center_freq) * torch.clip(descending_mask, min=0)
-        descending_mask = (freqs >= center_freq) * descending_mask
-        return ascending_mask + descending_mask
+        down_mask = (freqs >= center_freq) * down_mask
+        return up_mask + down_mask
 
     def frequency_domain_spreading(
         self, power_spectrum: torch.Tensor, bark_axis: torch.Tensor
