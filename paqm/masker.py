@@ -18,8 +18,8 @@ FREQ_SLOPES_CONSTANTS = (31, 22)
 class Masker:
     def __init__(
         self,
-        time_compression: float,
-        freq_compression: float,
+        time_compression: float = 0.6,
+        freq_compression: float = 0.8,
         tau_curve: List[Tuple[float, float]] = ENERGY_TIME_DECAY_CONSTANT,
         freq_spreading_constants: Tuple[float, float] = FREQ_SLOPES_CONSTANTS,
     ) -> None:
@@ -77,15 +77,11 @@ class Masker:
         up_slopes = self._ascending_slopes(db_spectrum)
         down_slopes = self._descending_slopes(bark_axis, db_spectrum)
         db_spectrum = db_spectrum.unsqueeze(-1)
-        # TODO 18/07/2023 --> should the expectation patterns have minimum contribution at zero?
-        # ascending --> max(S1 * (f - fo + L/S1), 0) for f < fo
+        # ascending --> S1 * (f - fo + L/S1) for f < fo
         up_mask = up_slopes * (freqs - center_freq + db_spectrum / up_slopes)
-        # ascending_mask = (freqs < center_freq) * torch.clip(ascending_mask, min=0)
         up_mask = (freqs < center_freq) * up_mask
-        # TODO 18/07/2023 --> should the expectation patterns have minimum contribution at zero?
-        # descending --> max(-S2 * (f - fo - L/S2), 0) for f >= fo
+        # descending --> -S2 * (f - fo - L/S2) for f >= fo
         down_mask = -down_slopes * (freqs - center_freq - db_spectrum / down_slopes)
-        # descending_mask = (freqs >= center_freq) * torch.clip(descending_mask, min=0)
         down_mask = (freqs >= center_freq) * down_mask
         return up_mask + down_mask
 
