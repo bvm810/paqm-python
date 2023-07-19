@@ -64,7 +64,7 @@ class LoudnessCompressor:
         Tf = torch.Tensor([p[3] for p in EQUAL_LOUDNESS_CONTOUR_PARAMS])
         Ln = loudness_level
         Af = (
-            4.47e-3 * (10 ** (0.025 * Ln) - 1.15)
+            0.00447 * (10 ** (0.025 * Ln) - 1.15)
             + (0.4 * 10 ** (((Tf + Lu) / 10) - 9)) ** af
         )
         spl = ((10 / af) * torch.log10(Af)) - Lu + 94
