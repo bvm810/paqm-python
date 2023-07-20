@@ -38,7 +38,7 @@ def test_spectrogram_with_long_cosine():
     output = analyzer.power_spectrum(signal)
     assert output.shape == (1, 1, 1025, 24)
     output = analyzer.power_spectrum(signal).squeeze()
-    # zeros are causing torch allclose to require lower tolerance, fix this later
+    # zeros are causing torch allclose to require lower tolerance
     assert torch.allclose(expected_output, output, atol=1e-08, rtol=1e-03)
 
 
@@ -50,7 +50,7 @@ def test_spectrogram_with_short_cosine():
     )
     expected_output = torch.load(os.path.join(FIXTURES_PATH, "stft-simple.pt"))
     output = simple_analyzer.power_spectrum(signal).squeeze()
-    # zeros are causing torch allclose to require lower tolerance, fix this later
+    # zeros are causing torch allclose to require lower tolerance
     assert torch.allclose(expected_output, output, atol=1e-08, rtol=1e-03)
 
 
@@ -69,7 +69,7 @@ def test_bark_spectrum_with_cosine():
     expected_output = torch.from_numpy(MATLAB_FIXTURES["bark_spectrum"])
     expected_output = expected_output.to(dtype=torch.float32)
     output = analyzer.bark_spectrum(signal).squeeze()
-    # zeros are causing torch allclose to require lower tolerance, fix this later
+    # zeros are causing torch allclose to require lower tolerance
     assert torch.allclose(expected_output, output, atol=1e-06, rtol=1e-02)
 
 
@@ -85,5 +85,5 @@ def test_batch():
     single_example = output[1, 0, :, :]
     expected_output = torch.from_numpy(MATLAB_FIXTURES["bark_spectrum"])
     expected_output = expected_output.to(dtype=torch.float32)
-    # zeros are causing torch allclose to require lower tolerance, fix this later
+    # zeros are causing torch allclose to require lower tolerance
     assert torch.allclose(expected_output, single_example, atol=1e-06, rtol=1e-02)

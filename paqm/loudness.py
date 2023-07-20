@@ -1,5 +1,7 @@
 import scipy
 import torch
+from paqm.utils import bark_to_hertz
+from paqm.transfer import OuterToInnerTransfer
 
 # Not entirely sure what those parameters are.
 # f stands for frequency, but the other ones are not clear.
@@ -51,6 +53,9 @@ class LoudnessCompressor:
         self.equal_loudness_contour_freqs = torch.Tensor(
             [p[0] for p in EQUAL_LOUDNESS_CONTOUR_PARAMS]
         )
+        self.hearing_threshold_contour = self.equal_loudness_contour(hearing_threshold)
+        self.schwell_factor = schwell_factor
+        self.compression_level = compression_level
 
     def equal_loudness_contour(self, loudness_level: float) -> torch.Tensor:
         # This method is not clear because I did not have access to the ISO 226 norm
@@ -71,7 +76,18 @@ class LoudnessCompressor:
         return spl
 
     def hearing_threshold_excitation(self, bark_freqs: torch.Tensor) -> torch.Tensor:
-        pass
+        hertz_freqs = bark_to_hertz(bark_freqs)
+        interpolator = scipy.interpolate.CubicSpline(
+            x=self.equal_loudness_contour_freqs, y=self.hearing_threshold_contour
+        )
+        threshold_at_freqs = interpolator(hertz_freqs)
+        threshold_at_freqs = 10 ** (torch.from_numpy(threshold_at_freqs) / 10)
+        threshold_at_freqs = threshold_at_freqs.unsqueeze(1)
+        # TODO 20/07/2023 figure out more efficient structure for function calls
+        # maybe this isn't the most efficient solution
+        # passing around OuterToInnerTransfer and gains would reduce number of operations
+        transfer = OuterToInnerTransfer()
+        return transfer.transfer_signal_with_freqs(threshold_at_freqs, bark_freqs)
 
     def internal_representation(
         self, power_spectrum: torch.Tensor, bark_freqs: torch.Tensor
