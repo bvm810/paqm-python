@@ -43,7 +43,6 @@ class SpectrumAnalyzer:
         bark_axis = self.freq_axis_in_barks
         lower_limits = bark_to_hertz(bark_axis - self.bark_binwidth / 2)
         upper_limits = bark_to_hertz(bark_axis + self.bark_binwidth / 2)
-        upper_limits[-1] = self.fs / 2 + 0.1  # extend last bark bin to fs / 2
         filterbank = torch.logical_and(
             input=(freqs >= lower_limits.unsqueeze(1)),
             other=(freqs < upper_limits.unsqueeze(1)),
@@ -68,7 +67,7 @@ class SpectrumAnalyzer:
 
     @property
     def freq_axis_in_barks(self):
-        last_bin = hertz_to_bark(self.freq_axis_in_hertz[-1]) - self.bark_binwidth
+        last_bin = hertz_to_bark(self.freq_axis_in_hertz[-1])
         barks = torch.arange(start=0, end=last_bin, step=self.bark_binwidth)
         return barks + self.bark_binwidth / 2
 

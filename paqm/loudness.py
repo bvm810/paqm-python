@@ -75,21 +75,36 @@ class LoudnessCompressor:
         spl = ((10 / af) * torch.log10(Af)) - Lu + 94
         return spl
 
-    def hearing_threshold_excitation(self, bark_freqs: torch.Tensor) -> torch.Tensor:
+    def hearing_threshold_at_freqs(self, bark_freqs: torch.Tensor) -> torch.Tensor:
         hertz_freqs = bark_to_hertz(bark_freqs)
         interpolator = scipy.interpolate.CubicSpline(
             x=self.equal_loudness_contour_freqs, y=self.hearing_threshold_contour
         )
         threshold_at_freqs = interpolator(hertz_freqs)
         threshold_at_freqs = 10 ** (torch.from_numpy(threshold_at_freqs) / 10)
+        return threshold_at_freqs
+
+    # TODO 20/07/2023 figure out more efficient structure for function calls
+    # maybe this isn't the most efficient solution
+    # passing around gains would reduce number of operations
+    def hearing_threshold_excitation(
+        self, bark_freqs: torch.Tensor, transfer: OuterToInnerTransfer
+    ) -> torch.Tensor:
+        threshold_at_freqs = self.hearing_threshold_at_freqs(bark_freqs)
         threshold_at_freqs = threshold_at_freqs.unsqueeze(1)
-        # TODO 20/07/2023 figure out more efficient structure for function calls
-        # maybe this isn't the most efficient solution
-        # passing around OuterToInnerTransfer and gains would reduce number of operations
-        transfer = OuterToInnerTransfer()
         return transfer.transfer_signal_with_freqs(threshold_at_freqs, bark_freqs)
 
-    def internal_representation(
-        self, power_spectrum: torch.Tensor, bark_freqs: torch.Tensor
+    def compress(
+        self,
+        power_spectrum: torch.Tensor,
+        bark_freqs: torch.Tensor,
+        transfer: OuterToInnerTransfer,
     ) -> torch.Tensor:
-        pass
+        e0 = self.hearing_threshold_excitation(bark_freqs, transfer)
+        e0 = e0.to(dtype=power_spectrum.dtype)
+        s = self.schwell_factor
+        g = self.compression_level
+        e = power_spectrum
+        # formula from Beaton & Beerends 1995
+        compressed_loudness = ((e0 / s) ** g) * ((1 - s + s * (e / e0)) ** g - 1)
+        return torch.clip(compressed_loudness, min=0)
