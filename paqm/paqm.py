@@ -52,7 +52,10 @@ class PAQM:
             input=(freqs >= SCALING_LOWER_LIMITS.unsqueeze(1)),
             other=(freqs < SCALING_UPPER_LIMITS.unsqueeze(1)),
         ).to(dtype=input.dtype)
-        factors = (intervals @ input) / (intervals @ reference)
+        input_energy = intervals @ input
+        reference_energy = intervals @ reference
+        reference_energy[reference_energy == 0] = 1
+        factors = input_energy / reference_energy
         intervals = intervals.view(-1, 1, 1, freqs.shape[-1], 1)
         factors = torch.movedim(factors, -2, 0).unsqueeze(-2)
         scaled_input = ((intervals * input) * factors).sum(dim=0)
@@ -69,14 +72,12 @@ class PAQM:
         return self._scores
 
     @property
-    def frame_scores():
-        # TODO return average scores per frame
-        pass
+    def frame_scores(self):
+        return torch.sum(self._scores.squeeze(), dim=0)
 
     @property
-    def score():
-        # TODO return PAQM score
-        pass
+    def score(self):
+        return torch.mean(self.frame_scores)
 
     @property
     def mean_opinion_score():

@@ -1,5 +1,4 @@
-tests/fixtures/noisy.mat
-tests/fixtures/denoised.mat
+tmp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
