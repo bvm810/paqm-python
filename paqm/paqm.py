@@ -7,6 +7,7 @@ from paqm.loudness import LoudnessCompressor
 
 SCALING_LOWER_LIMITS = torch.Tensor([0, 2, 22])
 SCALING_UPPER_LIMITS = torch.Tensor([2, 22, float("inf")])
+MOS_CONVERSION_COEFS = torch.Tensor([3.0495, 3.4806, 0.4769])
 
 
 class PAQM:
@@ -17,7 +18,7 @@ class PAQM:
         analyzer: SpectrumAnalyzer = SpectrumAnalyzer(fs=44100),
         transfer: OuterToInnerTransfer = OuterToInnerTransfer(),
         masker: Masker = Masker(),
-        compressor=LoudnessCompressor(),
+        compressor: LoudnessCompressor = LoudnessCompressor(),
     ) -> None:
         if audio.shape != reference.shape:
             raise ValueError("Input and reference tensors must have the same shape")
@@ -80,6 +81,8 @@ class PAQM:
         return torch.mean(self.frame_scores)
 
     @property
-    def mean_opinion_score():
-        # TODO return PAQM converted to mean opinion score
-        pass
+    def mean_opinion_score(self):
+        log_score = torch.log10(self.score)
+        poly = torch.Tensor([1, log_score, log_score**2])
+        mos = 0.999 + 4 / (1 + torch.exp(poly @ MOS_CONVERSION_COEFS))
+        return mos
