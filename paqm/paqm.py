@@ -50,13 +50,13 @@ class PAQM:
     def _scaling(self, input: torch.Tensor, reference: torch.Tensor) -> torch.Tensor:
         freqs = self.analyzer.freq_axis_in_barks
         intervals = torch.logical_and(
-            input=(freqs >= SCALING_LOWER_LIMITS.unsqueeze(1)),
-            other=(freqs < SCALING_UPPER_LIMITS.unsqueeze(1)),
+            input=(freqs > SCALING_LOWER_LIMITS.unsqueeze(1)),
+            other=(freqs <= SCALING_UPPER_LIMITS.unsqueeze(1)),
         ).to(dtype=input.dtype)
         input_energy = intervals @ input
         reference_energy = intervals @ reference
-        reference_energy[reference_energy == 0] = 1
-        factors = input_energy / reference_energy
+        input_energy[input_energy == 0] = 1
+        factors = reference_energy / input_energy
         intervals = intervals.view(-1, 1, 1, freqs.shape[-1], 1)
         factors = torch.movedim(factors, -2, 0).unsqueeze(-2)
         scaled_input = ((intervals * input) * factors).sum(dim=0)

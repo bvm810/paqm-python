@@ -30,5 +30,9 @@ def frame_signal(signal: torch.Tensor, window: torch.Tensor, hop: int) -> torch.
 # with zeros, and then padded with NaN before collating them as a batch. The simplest way to adapt the code would be
 # to remove the pad_signal function call from frame_signal, and assume it already receives a batch correctly padded with
 # zeros and NaNs. Insert a collate_fn here to make padding easy for the user.
+
+# TODO 07/08/2023 -- Tests for collated batch in each component of PAQM to make sure NaNs are not influencing MOS score
+
+
 def collate(signals: List[torch.Tensor]) -> torch.Tensor:
     pass
