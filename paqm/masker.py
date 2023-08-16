@@ -91,7 +91,7 @@ class Masker:
         db_spectrum = 10 * torch.log10(power_spectrum)
         masks = self._get_freq_spreading_masks(bark_axis, db_spectrum)
         masks = 10 ** (masks / 10)
-        excitation = torch.sum(masks ** (self.freq_compression / 2), dim=-3)
+        excitation = torch.sum(masks.abs() ** (self.freq_compression / 2), dim=-3)
         excitation = excitation ** (2 / self.freq_compression)
         return excitation.movedim(-1, -2)
 

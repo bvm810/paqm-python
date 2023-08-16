@@ -26,6 +26,7 @@ def frame_signal(signal: torch.Tensor, window: torch.Tensor, hop: int) -> torch.
     return windowed_blocks  # (batch, channels, blocks, block_size)
 
 
+# TODO 16/08/2023 -- wrap this in a class, so that we can use a custom pad token
 def collate(data: List[Tuple[torch.Tensor, torch.Tensor]]) -> torch.Tensor:
     inputs, refs = zip(*data)
     max_len = max(t.shape[-1] for t in inputs)
