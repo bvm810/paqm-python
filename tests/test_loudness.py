@@ -6,7 +6,9 @@ from paqm.transfer import OuterToInnerTransfer
 from paqm.loudness import LoudnessCompressor, PHON_HEARING_THRESHOLD
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
-MATLAB_FIXTURES = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "cmpLoudness.mat"))
+MATLAB_FIXTURES = scipy.io.loadmat(
+    os.path.join(FIXTURES_PATH, "matlab", "cmpLoudness.mat")
+)
 compressor = LoudnessCompressor(schwell_factor=0.5, compression_level=0.04)
 
 

@@ -6,7 +6,7 @@ from paqm.masker import Masker
 from paqm.utils import bark_to_hertz
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
-MATLAB_FIXTURES = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "masker.mat"))
+MATLAB_FIXTURES = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "matlab", "masker.mat"))
 masker = Masker(time_compression=0.6, freq_compression=0.8)
 overlap = 0.02
 

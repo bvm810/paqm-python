@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 from paqm.transfer import OuterToInnerTransfer
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
-MATLAB_FIXTURES = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "tfOuter2Inner.mat"))
+MATLAB_FIXTURES = scipy.io.loadmat(
+    os.path.join(FIXTURES_PATH, "matlab", "tfOuter2Inner.mat")
+)
 transfer = OuterToInnerTransfer()
 
 # TODO 12/07/2023: There seems to be some difference between Matlab's spline function and SciPy's CubicInterpolation

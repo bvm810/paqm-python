@@ -70,19 +70,21 @@ class PAQM:
 
     @property
     def full_scores(self):
-        return self._scores
+        return self._scores  # (batch, channels, bark bins, frames)
 
     @property
     def frame_scores(self):
-        return torch.sum(self._scores.squeeze(), dim=0)
+        return torch.sum(self._scores, dim=-2)  # (batch, channels, frames)
 
     @property
     def score(self):
-        return torch.mean(self.frame_scores)
+        return torch.nanmean(self.frame_scores, dim=-1)  # (batch, channels)
 
     @property
     def mean_opinion_score(self):
         log_score = torch.log10(self.score)
-        poly = torch.Tensor([1, log_score, log_score**2])
+        poly = torch.stack(
+            (torch.ones(log_score.shape), log_score, log_score**2), dim=-1
+        )
         mos = 0.999 + 4 / (1 + torch.exp(poly @ MOS_CONVERSION_COEFS))
         return mos

@@ -4,9 +4,11 @@ import torch
 import matplotlib.pyplot as plt
 from paqm.spectrum import SpectrumAnalyzer
 
+
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
-COSINE_PAQM = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "barkSpectrum.mat"))
-WGN_PAQM = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "wgn-bark-spectrum.mat"))
+MATLAB_FIXTURES = os.path.join(FIXTURES_PATH, "matlab")
+COSINE_PAQM = scipy.io.loadmat(os.path.join(MATLAB_FIXTURES, "barkSpectrum.mat"))
+WGN_PAQM = scipy.io.loadmat(os.path.join(MATLAB_FIXTURES, "wgn-bark-spectrum.mat"))
 analyzer = SpectrumAnalyzer(
     fs=44100,
     frame_duration=0.04,
@@ -81,7 +83,7 @@ def test_bark_spectrum_with_cosine():
 
 
 def test_spectrogram_with_wgn():
-    input = torch.from_numpy(WGN_PAQM["x"])
+    input = torch.from_numpy(WGN_PAQM["x_pad"])
     input = input.to(dtype=torch.float32)
     input = input.view(1, 1, input.shape[-1])
     output = analyzer.power_spectrum(input).squeeze()
@@ -92,7 +94,7 @@ def test_spectrogram_with_wgn():
 
 
 def test_bark_spectrum_with_wgn():
-    input = torch.from_numpy(WGN_PAQM["x"])
+    input = torch.from_numpy(WGN_PAQM["x_pad"])
     input = input.to(dtype=torch.float32)
     input = input.view(1, 1, input.shape[-1])
     output = analyzer.bark_spectrum(input).squeeze()[:-1, :]

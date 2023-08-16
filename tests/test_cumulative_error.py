@@ -7,8 +7,10 @@ from paqm.paqm import PAQM
 from paqm.transfer import OuterToInnerTransfer
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
-CUMULATIVE = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "cumulative-test.mat"))
-AUDIO = torch.from_numpy(CUMULATIVE["audio"])
+CUMULATIVE = scipy.io.loadmat(
+    os.path.join(FIXTURES_PATH, "matlab", "cumulative-test.mat")
+)
+AUDIO = torch.from_numpy(CUMULATIVE["x_pad"])
 AUDIO = AUDIO.to(dtype=torch.float32).view(1, 1, AUDIO.shape[0])
 evaluator = PAQM(AUDIO, AUDIO)
 

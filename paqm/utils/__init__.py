@@ -1,6 +1,7 @@
 import torch
 import math
-from typing import List
+from typing import List, Tuple
+import torch.nn.functional as F
 
 
 def bark_to_hertz(bark_freqs: torch.Tensor) -> torch.Tensor:
@@ -20,19 +21,18 @@ def pad_signal(signal: torch.Tensor, frame_size: int, hop: int) -> torch.Tensor:
 
 def frame_signal(signal: torch.Tensor, window: torch.Tensor, hop: int) -> torch.Tensor:
     block_size = window.shape[-1]
-    padded_signal = pad_signal(signal, block_size, hop)
-    blocks = padded_signal.unfold(-1, block_size, hop)
+    blocks = signal.unfold(-1, block_size, hop)
     windowed_blocks = blocks * window.unsqueeze(0)
     return windowed_blocks  # (batch, channels, blocks, block_size)
 
 
-# TODO 31/07/2023 -- In order to be able to batch process audio files, they should be first padded individually
-# with zeros, and then padded with NaN before collating them as a batch. The simplest way to adapt the code would be
-# to remove the pad_signal function call from frame_signal, and assume it already receives a batch correctly padded with
-# zeros and NaNs. Insert a collate_fn here to make padding easy for the user.
-
-# TODO 07/08/2023 -- Tests for collated batch in each component of PAQM to make sure NaNs are not influencing MOS score
-
-
-def collate(signals: List[torch.Tensor]) -> torch.Tensor:
-    pass
+def collate(data: List[Tuple[torch.Tensor, torch.Tensor]]) -> torch.Tensor:
+    inputs, refs = zip(*data)
+    max_len = max(t.shape[-1] for t in inputs)
+    collated_in = torch.zeros((len(data), inputs[0].shape[0], max_len))
+    collated_refs = torch.zeros(collated_in.shape)
+    for i in range(len(data)):
+        pad_len = max_len - inputs[i].shape[-1]
+        collated_in[i, ...] = F.pad(inputs[i], (0, pad_len), "constant", float("nan"))
+        collated_refs[i, ...] = F.pad(refs[i], (0, pad_len), "constant", float("nan"))
+    return collated_in, collated_refs
