@@ -30,13 +30,13 @@ class SpectrumAnalyzer:
     def stft(self, signal: torch.Tensor) -> torch.Tensor:
         # output stft with size (batch, n_channels, nfft // 2 + 1, n_frames)
         hop = self.frame_size - self.overlap_size
-        frames = frame_signal(signal, self.window, hop)
+        frames = frame_signal(signal, self.window.to(signal.device), hop)
         stft = torch.fft.rfft(input=frames, n=self.nfft, dim=-1)
         return torch.movedim(stft, -2, -1)
 
     def power_spectrum(self, signal: torch.Tensor) -> torch.Tensor:
         spectrum = self.stft(signal)
-        return torch.abs(spectrum) ** 2
+        return torch.pow(torch.abs(spectrum), 2)
 
     def _get_bark_filterbank(self) -> torch.Tensor:
         freqs = self.freq_axis_in_hertz
@@ -55,10 +55,11 @@ class SpectrumAnalyzer:
 
     def bark_spectrum(self, signal: torch.Tensor) -> torch.Tensor:
         # output bark spectrum with shape (batch, channels, barks, frames)
+        power_spectrum = self.power_spectrum(signal)
         filterbank = self._get_bark_filterbank()
         filterbank = filterbank.view(1, 1, filterbank.shape[0], -1)
-        power_spectrum = self.power_spectrum(signal)
-        return filterbank.to(power_spectrum.dtype) @ power_spectrum
+        filterbank = filterbank.to(power_spectrum.dtype).to(power_spectrum.device)
+        return filterbank @ power_spectrum
 
     @property
     def freq_axis_in_hertz(self):

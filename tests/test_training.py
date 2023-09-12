@@ -1,14 +1,14 @@
 import os
 import torch
 from torch.utils.data import DataLoader
-from torch.optim import SGD
+from torch.optim import SGD, Adam
 from typing import Tuple, List
 from paqm.paqm import PAQM
 from paqm.utils import collate
 from paqm.utils.dataset import PAQMDataset
 
 DATA_FOLDER = os.path.join(os.path.dirname(__file__), "fixtures", "training-fixtures")
-EPOCHS = 2
+EPOCHS = 10
 
 
 def _setup_network(input_shape: int) -> torch.nn.Module:
@@ -17,6 +17,8 @@ def _setup_network(input_shape: int) -> torch.nn.Module:
         torch.nn.Sigmoid(),
         torch.nn.Linear(10, input_shape),
     )
+    torch.nn.init.normal_(net[0].weight, mean=0.0, std=1.0)
+    torch.nn.init.normal_(net[2].weight, mean=0.0, std=1.0)
     return net
 
 
@@ -36,16 +38,17 @@ def test_training():
     loader = _setup_data(DATA_FOLDER)
     input_size = next(iter(loader))[0].shape[-1]
     net = _setup_network(input_size).to(device)
-    optimizer = SGD(net.parameters(), lr=1e-4)
+    optimizer = Adam(net.parameters(), lr=1e-5)
     for _ in range(EPOCHS):
+        first_layer = net[0].weight
+        second_layer = net[2].weight
         for input, ref in iter(loader):
             input, ref = input.to(device), ref.to(device)
             output = net(input)
-            loss = PAQM(output, ref).score.mean()
-            print(loss)
+            # loss = PAQM(output, ref).score.mean()
+            loss = torch.nn.functional.mse_loss(output, ref)
             optimizer.zero_grad()
             loss.backward()
-            print(net[0].weight.grad)
-            print(net[2].weight.grad)
             optimizer.step()
-    assert False
+        assert not torch.allclose(first_layer, net[0].weight)
+        assert not torch.allclose(second_layer, net[2].weight)

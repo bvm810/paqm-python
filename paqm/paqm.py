@@ -32,7 +32,7 @@ class PAQM:
 
     def _get_internal_representation(self, audio: torch.Tensor) -> torch.Tensor:
         bark_stft = self.analyzer.bark_spectrum(audio)
-        bark_axis = self.analyzer.freq_axis_in_barks
+        bark_axis = self.analyzer.freq_axis_in_barks.to(bark_stft.device)
         inner_ear_spectrum = self.transfer.transfer_signal_with_freqs(
             bark_stft, bark_axis
         )
@@ -49,10 +49,14 @@ class PAQM:
 
     def _scaling(self, input: torch.Tensor, reference: torch.Tensor) -> torch.Tensor:
         freqs = self.analyzer.freq_axis_in_barks
-        intervals = torch.logical_and(
-            input=(freqs > SCALING_LOWER_LIMITS.unsqueeze(1)),
-            other=(freqs <= SCALING_UPPER_LIMITS.unsqueeze(1)),
-        ).to(dtype=input.dtype)
+        intervals = (
+            torch.logical_and(
+                input=(freqs > SCALING_LOWER_LIMITS.unsqueeze(1)),
+                other=(freqs <= SCALING_UPPER_LIMITS.unsqueeze(1)),
+            )
+            .to(dtype=input.dtype)
+            .to(input.device)
+        )
         input_energy = intervals @ input
         reference_energy = intervals @ reference
         input_energy[input_energy == 0] = 1
@@ -83,8 +87,7 @@ class PAQM:
     @property
     def mean_opinion_score(self):
         log_score = torch.log10(self.score)
-        poly = torch.stack(
-            (torch.ones(log_score.shape), log_score, log_score**2), dim=-1
-        )
-        mos = 0.999 + 4 / (1 + torch.exp(poly @ MOS_CONVERSION_COEFS))
+        ones = torch.ones(log_score.shape, device=log_score.device)
+        poly = torch.stack((ones, log_score, log_score**2), dim=-1)
+        mos = 0.999 + 4 / (1 + torch.exp(poly @ MOS_CONVERSION_COEFS.to(poly.device)))
         return mos

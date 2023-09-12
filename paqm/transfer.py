@@ -35,6 +35,7 @@ class OuterToInnerTransfer:
     ) -> torch.Tensor:
         gains = self.transfer_function_gains(signal_frequencies)
         gains = gains.unsqueeze(1).to(dtype=signal_magnitudes.dtype)
+        gains = gains.to(signal_magnitudes.device)
         return gains * signal_magnitudes
 
     def transfer_signal_with_gains(
@@ -47,9 +48,9 @@ class OuterToInnerTransfer:
         interpolator = scipy.interpolate.CubicSpline(
             x=self.transfer_frequencies_in_barks, y=self.transfer_log_magnitudes
         )
-        interpolated_log_mags = interpolator(bark_freqs)
-        gains = 10 ** (torch.from_numpy(interpolated_log_mags) / 10)
-        return gains
+        interpolated_log_mags = interpolator(bark_freqs.detach().cpu().numpy())
+        gains = torch.pow(10, (torch.from_numpy(interpolated_log_mags) / 10))
+        return gains.to(bark_freqs.device)
 
     @property
     def transfer_log_magnitudes(self) -> torch.Tensor:

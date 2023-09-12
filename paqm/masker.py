@@ -38,10 +38,12 @@ class Masker:
         # interpolation needs to be done in hertz because bark conversion is non linear
         frequencies = bark_to_hertz(frequencies)
         interpolator = scipy.interpolate.PchipInterpolator(tau_frequencies, tau_values)
-        time_decay_constant = interpolator(frequencies)
+        time_decay_constant = torch.from_numpy(
+            interpolator(frequencies.detach().cpu().numpy())
+        ).to(dtype=frequencies.dtype)
         time_decay_constant[frequencies > tau_frequencies[-1]] = tau_values[-1]
-        time_decay = torch.exp(-overlap / torch.from_numpy(time_decay_constant))
-        return time_decay
+        time_decay = torch.exp(-overlap / time_decay_constant)
+        return time_decay.to(frequencies.device)
 
     def time_domain_spreading(
         self, spectrum: torch.Tensor, bark_axis: torch.Tensor, overlap: float
@@ -90,8 +92,8 @@ class Masker:
     ) -> torch.Tensor:
         db_spectrum = 10 * torch.log10(power_spectrum)
         masks = self._get_freq_spreading_masks(bark_axis, db_spectrum)
-        masks = 10 ** (masks / 10)
-        excitation = torch.sum(masks.abs() ** (self.freq_compression / 2), dim=-3)
+        masks = torch.pow(10, ((masks / 10) * (self.freq_compression / 2)))
+        excitation = torch.sum(masks, dim=-3)
         excitation = excitation ** (2 / self.freq_compression)
         return excitation.movedim(-1, -2)
 

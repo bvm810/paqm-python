@@ -80,8 +80,8 @@ class LoudnessCompressor:
         interpolator = scipy.interpolate.CubicSpline(
             x=self.equal_loudness_contour_freqs, y=self.hearing_threshold_contour
         )
-        threshold_at_freqs = interpolator(hertz_freqs)
-        threshold_at_freqs = 10 ** (torch.from_numpy(threshold_at_freqs) / 10)
+        threshold_at_freqs = interpolator(hertz_freqs.detach().cpu().numpy())
+        threshold_at_freqs = torch.pow(10, (torch.from_numpy(threshold_at_freqs) / 10))
         return threshold_at_freqs
 
     # TODO 20/07/2023 figure out more efficient structure for function calls
@@ -101,7 +101,7 @@ class LoudnessCompressor:
         transfer: OuterToInnerTransfer,
     ) -> torch.Tensor:
         e0 = self.hearing_threshold_excitation(bark_freqs, transfer)
-        e0 = e0.to(dtype=power_spectrum.dtype)
+        e0 = e0.to(dtype=power_spectrum.dtype).to(power_spectrum.device)
         s = self.schwell_factor
         g = self.compression_level
         e = power_spectrum

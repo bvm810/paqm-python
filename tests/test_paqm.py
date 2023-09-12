@@ -8,8 +8,6 @@ from paqm.paqm import PAQM
 from paqm.utils.dataset import PAQMDataset
 from paqm.utils import collate
 
-## TODO 14/08/2023 change current fixtures for zero padded fixtures
-
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
 WGN_PAQM = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "matlab", "paqm-same-wgn.mat"))
 MP3_PAQM = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "matlab", "paqm-audio.mat"))
@@ -200,14 +198,24 @@ def test_batch_scores():
     dataset = PAQMDataset(inputs, references)
     assert len(dataset) == 3
     loader = DataLoader(dataset, batch_size=2, shuffle=False, collate_fn=collate)
+    expected_mos_scores = torch.Tensor([2.6887, 2.6824, 2.6984])
+    expected_avg_scores = torch.Tensor([0.1270, 0.1277, 0.1259])
+    mos_scores, avg_scores = run_batches_on_device("cpu", loader)
+    assert torch.allclose(avg_scores, expected_avg_scores, atol=1e-5, rtol=1e-2)
+    assert torch.allclose(mos_scores, expected_mos_scores, atol=1e-5, rtol=1e-2)
+    mos_scores, avg_scores = run_batches_on_device("cuda", loader)
+    assert torch.allclose(avg_scores, expected_avg_scores, atol=1e-5, rtol=1e-2)
+    assert torch.allclose(mos_scores, expected_mos_scores, atol=1e-5, rtol=1e-2)
+
+
+def run_batches_on_device(device: str, loader: DataLoader):
     mos_scores = torch.Tensor()
     avg_scores = torch.Tensor()
     for batch in iter(loader):
         input, ref = batch
-        evaluator = PAQM(input, ref)
-        avg_scores = torch.cat((avg_scores, evaluator.score.flatten()))
-        mos_scores = torch.cat((mos_scores, evaluator.mean_opinion_score.flatten()))
-    expected_mos_scores = torch.Tensor([2.6887, 2.6824, 2.6984])
-    expected_avg_scores = torch.Tensor([0.1270, 0.1277, 0.1259])
-    assert torch.allclose(avg_scores, expected_avg_scores, atol=1e-5, rtol=1e-2)
-    assert torch.allclose(mos_scores, expected_mos_scores, atol=1e-5, rtol=1e-2)
+        evaluator = PAQM(input.to(device), ref.to(device))
+        avg_scores = torch.cat((avg_scores, evaluator.score.flatten().cpu()))
+        mos_scores = torch.cat(
+            (mos_scores, evaluator.mean_opinion_score.flatten().cpu())
+        )
+    return mos_scores, avg_scores
