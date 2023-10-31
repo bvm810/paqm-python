@@ -190,6 +190,14 @@ def test_mean_opinion_score_with_mp3():
     assert torch.allclose(output, expected_output, atol=1e-5, rtol=1e-2)
 
 
+def test_mean_opinion_score_with_same():
+    output = evaluator_same.mean_opinion_score[0]
+    expected_output = torch.Tensor([5.0])
+    print(output)
+    print(expected_output)
+    assert torch.allclose(output, expected_output, atol=1e-5, rtol=1e-2)
+
+
 def test_batch_scores():
     ref_folder = os.path.join(FIXTURES_PATH, "dataset-fixtures", "references")
     references = [os.path.join(ref_folder, p) for p in os.listdir(ref_folder)]
@@ -198,7 +206,7 @@ def test_batch_scores():
     dataset = PAQMDataset(inputs, references)
     assert len(dataset) == 3
     loader = DataLoader(dataset, batch_size=2, shuffle=False, collate_fn=collate)
-    expected_mos_scores = torch.Tensor([2.6887, 2.6824, 2.6984])
+    expected_mos_scores = torch.Tensor([2.6237, 2.6091, 2.6148])
     expected_avg_scores = torch.Tensor([0.1270, 0.1277, 0.1259])
     mos_scores, avg_scores = run_batches_on_device("cpu", loader)
     assert torch.allclose(avg_scores, expected_avg_scores, atol=1e-5, rtol=1e-2)

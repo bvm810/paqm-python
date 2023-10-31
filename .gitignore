@@ -1,5 +1,5 @@
 tmp/
-paqm_evaml.py
+paqm_eval.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

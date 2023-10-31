@@ -7,7 +7,7 @@ from paqm.loudness import LoudnessCompressor
 
 SCALING_LOWER_LIMITS = torch.Tensor([0, 2, 22])
 SCALING_UPPER_LIMITS = torch.Tensor([2, 22, float("inf")])
-MOS_CONVERSION_COEFS = torch.Tensor([3.0495, 3.4806, 0.4769])
+MOS_CONVERSION_COEFS = torch.Tensor([2.5524, 2.4136])
 
 
 class PAQM:
@@ -86,8 +86,8 @@ class PAQM:
 
     @property
     def mean_opinion_score(self):
-        log_score = torch.log10(self.score)
+        log_score = torch.log10(self.score + 1e-10)  # eps to avoid NaNs
         ones = torch.ones(log_score.shape, device=log_score.device)
-        poly = torch.stack((ones, log_score, log_score**2), dim=-1)
+        poly = torch.stack((ones, log_score), dim=-1)
         mos = 0.999 + 4 / (1 + torch.exp(poly @ MOS_CONVERSION_COEFS.to(poly.device)))
         return mos
