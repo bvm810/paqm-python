@@ -8,7 +8,7 @@ from paqm.paqm import PAQM
 from paqm.utils import collate
 from paqm.utils.dataset import PAQMDataset
 
-DATA_FOLDER = os.path.join('/nfs/home/wallace.abreu/Mestrado/paqm-python/tests', "fixtures", "training-fixtures")
+DATA_FOLDER = os.path.join(os.path.dirname(__file__), "fixtures", "training-fixtures")
 EPOCHS = 10
 torch.manual_seed(0)
 
