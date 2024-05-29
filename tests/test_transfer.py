@@ -74,7 +74,7 @@ def test_inner_to_outer_transfer():
     # zeros are causing torch allclose to require lower tolerance, fix this later
     # there is also error for very high frequencies because of the interpolation difference
     # this should not be relevant as it only impacts frequencies above 24 Barks
-    # assert torch.allclose(expected_output, output, atol=1e-06, rtol=1e-02)
+    assert torch.allclose(expected_output, output, atol=1e-06, rtol=1e-02)
 
 
 def test_batch():
