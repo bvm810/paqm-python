@@ -1,5 +1,6 @@
 tmp/
 paqm_eval.py
+environment.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

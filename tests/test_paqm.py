@@ -200,9 +200,9 @@ def test_mean_opinion_score_with_same():
 
 def test_batch_scores():
     ref_folder = os.path.join(FIXTURES_PATH, "dataset-fixtures", "references")
-    references = [os.path.join(ref_folder, p) for p in os.listdir(ref_folder)]
+    references = sorted([os.path.join(ref_folder, p) for p in os.listdir(ref_folder)])
     input_folder = os.path.join(FIXTURES_PATH, "dataset-fixtures", "inputs")
-    inputs = [os.path.join(input_folder, p) for p in os.listdir(input_folder)]
+    inputs = sorted([os.path.join(input_folder, p) for p in os.listdir(input_folder)])
     dataset = PAQMDataset(inputs, references)
     assert len(dataset) == 3
     loader = DataLoader(dataset, batch_size=2, shuffle=False, collate_fn=collate)

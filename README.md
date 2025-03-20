@@ -4,9 +4,11 @@ This repo contains a pytorch implementation of the perceptual audio quality meas
 
 ## Dependencies
 
-* pytorch >= 1.12.1
-* torchaudio >= 0.12.1
-* scipy >= 1.11.1
+* pytorch
+* torchaudio
+* scipy
+* pytest (for testing)
+* matplotlib (for testing)
 
 ## Installation
 

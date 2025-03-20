@@ -36,9 +36,9 @@ def _setup_network(input_shape: int) -> torch.nn.Module:
 
 def _setup_data(root_folder: str) -> Tuple[List[str], List[str]]:
     ref_folder = os.path.join(root_folder, "references")
-    references = [os.path.join(ref_folder, p) for p in os.listdir(ref_folder)]
+    references = sorted([os.path.join(ref_folder, p) for p in os.listdir(ref_folder)])
     input_folder = os.path.join(root_folder, "inputs")
-    inputs = [os.path.join(input_folder, p) for p in os.listdir(input_folder)]
+    inputs = sorted([os.path.join(input_folder, p) for p in os.listdir(input_folder)])
     dataset = PAQMDataset(inputs, references)
     loader = DataLoader(dataset, batch_size=2, shuffle=False)
     return loader
@@ -62,6 +62,6 @@ def test_training():
             optimizer.step()
             grads = torch.cat([p.grad.view(1, -1) for p in net.parameters()], dim=-1)
             assert torch.linalg.vector_norm(grads) > 1e-5
-            assert not torch.allclose(grads, torch.zeros(grads.shape))
+            assert not torch.allclose(grads, torch.zeros(grads.shape, device=device))
     after_params = torch.cat([p.view(1, -1) for p in net.parameters()], dim=-1)
     assert not torch.allclose(before_params, after_params)

@@ -28,9 +28,9 @@ def test_hertz_to_bark():
 
 def test_paqm_dataset():
     ref_folder = os.path.join(FIXTURES_PATH, "dataset-fixtures", "references")
-    references = [os.path.join(ref_folder, p) for p in os.listdir(ref_folder)]
+    references = sorted([os.path.join(ref_folder, p) for p in os.listdir(ref_folder)])
     input_folder = os.path.join(FIXTURES_PATH, "dataset-fixtures", "inputs")
-    inputs = [os.path.join(input_folder, p) for p in os.listdir(input_folder)]
+    inputs = sorted([os.path.join(input_folder, p) for p in os.listdir(input_folder)])
     dataset = PAQMDataset(inputs, references)
     assert len(dataset) == 3
     loader = DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=collate)
