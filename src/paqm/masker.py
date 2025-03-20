@@ -1,6 +1,6 @@
 import scipy
 import torch
-from paqm.utils import hertz_to_bark, bark_to_hertz
+from .utils import hertz_to_bark, bark_to_hertz
 from typing import List, Tuple
 
 

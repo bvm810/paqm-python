@@ -1,7 +1,7 @@
 import scipy
 import torch
-from paqm.utils import bark_to_hertz
-from paqm.transfer import OuterToInnerTransfer
+from .utils import bark_to_hertz
+from .transfer import OuterToInnerTransfer
 
 # Not entirely sure what those parameters are.
 # f stands for frequency, but the other ones are not clear.

@@ -2,8 +2,8 @@ import os
 import scipy
 import torch
 import matplotlib.pyplot as plt
-from paqm.masker import Masker
-from paqm.utils import bark_to_hertz
+from src.paqm.masker import Masker
+from src.paqm.utils import bark_to_hertz
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
 MATLAB_FIXTURES = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "matlab", "masker.mat"))

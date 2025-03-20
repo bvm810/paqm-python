@@ -1,8 +1,8 @@
 import torch
-from paqm.spectrum import SpectrumAnalyzer
-from paqm.transfer import OuterToInnerTransfer
-from paqm.masker import Masker
-from paqm.loudness import LoudnessCompressor
+from .spectrum import SpectrumAnalyzer
+from .transfer import OuterToInnerTransfer
+from .masker import Masker
+from .loudness import LoudnessCompressor
 
 
 SCALING_LOWER_LIMITS = torch.Tensor([0, 2, 22])

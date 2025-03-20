@@ -2,8 +2,8 @@ import os
 import scipy
 import torch
 from torch.utils.data import DataLoader
-from paqm.utils import bark_to_hertz, hertz_to_bark, collate
-from paqm.utils.dataset import PAQMDataset
+from src.paqm.utils import bark_to_hertz, hertz_to_bark, collate
+from src.paqm.utils.dataset import PAQMDataset
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
 

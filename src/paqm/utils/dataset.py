@@ -3,7 +3,7 @@ import math
 import torchaudio
 from typing import List
 from torch.utils.data import Dataset
-from paqm.utils import pad_signal
+from ..utils import pad_signal
 
 
 class PAQMDataset(Dataset):

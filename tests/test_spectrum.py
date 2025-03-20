@@ -2,7 +2,7 @@ import os
 import scipy
 import torch
 import matplotlib.pyplot as plt
-from paqm.spectrum import SpectrumAnalyzer
+from src.paqm.spectrum import SpectrumAnalyzer
 
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
