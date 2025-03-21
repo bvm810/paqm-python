@@ -2,8 +2,8 @@ import os
 import scipy
 import torch
 import matplotlib.pyplot as plt
-from src.paqm.transfer import OuterToInnerTransfer
-from src.paqm.loudness import LoudnessCompressor, PHON_HEARING_THRESHOLD
+from torchpaqm import OuterToInnerTransfer, LoudnessCompressor
+from torchpaqm.loudness import PHON_HEARING_THRESHOLD
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
 MATLAB_FIXTURES = scipy.io.loadmat(

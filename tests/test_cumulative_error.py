@@ -3,8 +3,7 @@ import scipy
 import torch
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-from src.paqm.paqm import PAQM
-from src.paqm.transfer import OuterToInnerTransfer
+from torchpaqm import PAQM, OuterToInnerTransfer
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
 CUMULATIVE = scipy.io.loadmat(

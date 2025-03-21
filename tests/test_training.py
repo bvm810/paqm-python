@@ -4,9 +4,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import SGD, Adam
 from typing import Tuple, List
-from src.paqm.paqm import PAQM
-from src.paqm.utils import collate
-from src.paqm.utils.dataset import PAQMDataset
+from torchpaqm import PAQM
+from torchpaqm.utils import PAQMDataset, collate
 
 DATA_FOLDER = os.path.join(os.path.dirname(__file__), "fixtures", "training-fixtures")
 EPOCHS = 10

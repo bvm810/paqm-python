@@ -3,14 +3,19 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "torch-paqm"
+name = "torchpaqm"
 version = "0.0.1"
 authors = [
   { name="Bernardo Vieira de Miranda", email="bvm810@gmail.com" },
 ]
 description = "Implementation of PAQM in Python using pytorch for vectorized operations."
 readme = "README.md"
-requires-python = ">3.10.8"
+requires-python = ">=3.10.8"
+dependencies = [
+  "torch>=2.2.0",
+  "torchaudio>=2.2.0",
+  "scipy>=1.15.2"
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -19,6 +24,9 @@ classifiers = [
     "Framework :: Pytest"
 ]
 
+[project.optional-dependencies]
+tests = ["pytest>=8.3.5", "matplotlib>=3.10.1"]
+
 [project.urls]
-Homepage = "https://github.com/bvm810/torch-paqm"
-Issues = "https://github.com/bvm810/torch-paqm/issues"
+Homepage = "https://github.com/bvm810/torchpaqm"
+Issues = "https://github.com/bvm810/torchpaqm/issues"

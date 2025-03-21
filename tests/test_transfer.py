@@ -2,7 +2,7 @@ import os
 import scipy
 import torch
 import matplotlib.pyplot as plt
-from src.paqm.transfer import OuterToInnerTransfer
+from torchpaqm import OuterToInnerTransfer
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
 MATLAB_FIXTURES = scipy.io.loadmat(

@@ -4,9 +4,8 @@ import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-from src.paqm.paqm import PAQM
-from src.paqm.utils.dataset import PAQMDataset
-from src.paqm.utils import collate
+from torchpaqm import PAQM
+from torchpaqm.utils import PAQMDataset, collate
 
 FIXTURES_PATH = os.path.join(os.path.dirname(__file__), "fixtures")
 WGN_PAQM = scipy.io.loadmat(os.path.join(FIXTURES_PATH, "matlab", "paqm-same-wgn.mat"))
